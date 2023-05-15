@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:p="http://www.springframework.org/schema/p"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xmlns:mvc="http://www.springframework.org/schema/mvc"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+                http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd">
+
+    <!-- uiadapter 데이터변환 처리관련 설정을 위한 dispatcher-servlet.xml 파일수정
+	: uiadapter 적용의 제일 중요한 핵심 부분이며 uiadapter 모듈의 bean으로 등록하여 사용하기 위한 설정입니다.
+     " uiadapter17 은 무엇일까? " 게시물 uiadapter 의 처리순서도에서 언급되었던 중요기능들을 선언함으로써 uiadapter 을 사용 할 수 있게 됩니다. -->
+    
+    
+    
+	<context:component-scan base-package="sample" use-default-filters="false">
+	    <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+
+    
+    
+    <!-- 스프링의 RequestMappingHandlerAdapter 구현체 -->
+    
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+<!-- 
+        <property name="webBindingInitializer">
+            <bean class="egovframework.example.cmmn.web.EgovBindingInitializer"/>
+        </property>
+ -->
+    </bean>
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping">
+        <property name="interceptors">
+            <list>
+                <ref bean="localeChangeInterceptor" />
+            </list>
+        </property>
+    </bean>
+    
+    
+    
+    <bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver" />
+    <!-- 쿠키를 이용한 Locale 이용시 <bean id="localeResolver" class="org.springframework.web.servlet.i18n.CookieLocaleResolver"/> -->
+    <bean id="localeChangeInterceptor" class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
+        <property name="paramName" value="language" />
+    </bean>
+
+    <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+        <property name="defaultErrorView" value="cmmn/egovError"/>
+        <property name="exceptionMappings">
+            <props>
+                <prop key="org.springframework.dao.DataAccessException">cmmn/dataAccessFailure</prop>
+                <prop key="org.springframework.transaction.TransactionException">cmmn/transactionFailure</prop>
+                <prop key="egovframework.rte.fdl.cmmn.exception.EgovBizException">cmmn/egovError</prop>
+                <prop key="org.springframework.security.AccessDeniedException">cmmn/egovError</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean class="org.springframework.web.servlet.view.UrlBasedViewResolver" p:order="1"
+	    p:viewClass="org.springframework.web.servlet.view.JstlView"
+	    p:prefix="/WEB-INF/jsp/egovframework/example/" p:suffix=".jsp"/>
+
+    <!-- For Pagination Tag -->
+<!-- 
+    <bean id="imageRenderer" class="egovframework.example.cmmn.web.EgovImgPaginationRenderer"/>
+
+    <bean id="paginationManager" class="egovframework.rte.ptl.mvc.tags.ui.pagination.DefaultPaginationManager">
+        <property name="rendererType">
+            <map>
+                <entry key="image" value-ref="imageRenderer"/>
+            </map>
+        </property>
+    </bean>
+ -->
+	<!-- /For Pagination Tag -->
+
+    <mvc:view-controller path="/cmmn/validator.do" view-name="cmmn/validator"/>
+
+    
+    
+    <!-- /////////////////////////////////// 넥사크로N UIADAPTER 설정 시작 /////////////////////////////////// -->
+    
+    <!-- annotation-driven 설정. -->
+    <mvc:annotation-driven />
+    
+    <bean id="nexacroInterceptor" class="com.nexacro.uiadapter.spring.core.servlet.NexacroInterceptor"/>
+    <bean id="nexacroFileView"    class="com.nexacro.uiadapter.spring.core.view.NexacroFileView" />
+    <bean id="nexacroView"        class="com.nexacro.uiadapter.spring.core.view.NexacroView">
+        <property name="defaultContentType" value="PlatformXml" /> <!-- PlatformXml PlatformJson -->
+        <property name="defaultCharset" value="UTF-8" />
+    </bean>
+    
+    
+    
+    <!-- NexacroRequestMappingHandlerAdapter
+	: 넥사크로플랫폼 의 입/출력 데이터 변환을 수행하기 위해 Spring의 RequestMappingHandlerAdapter의 확장된 형태입니다.
+	 java.util.Map의 데이터 변환을 제공합니다. -->
+	 
+	<!-- NexacroMethodArgumentResolver
+	: 개발자가 작성하게 되는 Controller의 입력 파라미터 중 넥사크로플랫폼 의 데이터 변환을 수행합니다. 
+	Ex> DataSet -> java bean -->
+	
+	<!-- NexacroHandlerMethodReturnValueHandler
+	: Controller에서 반환 되는 값을 넥사크로플랫폼 의 데이터로 변환합니다. 
+	Ex> java bean -> Dataset -->
+	
+	<!-- NexacroView
+	: 넥사크로플랫폼 으로 데이터 송신 역할을 수행합니다. -->
+	
+	<!-- NexacroFileView
+	: 넥사크로플랫폼 으로 File 데이터에 대한 송신 역할을 수행합니다. -->
+	
+	<!-- NexacroMappingExceptionResolver
+	: 넥사크로플랫폼 에서 서비스 요청 시 예외에 대한 처리를 수행합니다. -->
+    
+    <!-- 넥사크로N RequestMappingHandlerAdapter 구현체 등록 -->
+    <bean class="com.nexacro.uiadapter.spring.core.resolve.NexacroRequestMappingHandlerAdapter" p:order="0">
+        <property name="customArgumentResolvers">
+            <list><bean class="com.nexacro.uiadapter.spring.core.resolve.NexacroMethodArgumentResolver" /></list>
+        </property>
+        <property name="customReturnValueHandlers">
+            <list>
+                <bean class="com.nexacro.uiadapter.spring.core.resolve.NexacroHandlerMethodReturnValueHandler">
+                    <property name="view"     ref="nexacroView" />
+                    <property name="fileView" ref="nexacroFileView" />
+                </bean>
+            </list>
+        </property>
+    </bean>
+    
+    <!-- 넥사크로N EXCEPTION-RESOLVER 등록 -->
+    <bean id="exceptionResolver" class="com.nexacro.uiadapter.spring.core.resolve.NexacroMappingExceptionResolver" p:order="1">
+        <property name="view" ref="nexacroView" />   
+        <property name="shouldLogStackTrace" value="true" />   
+        <property name="shouldSendStackTrace" value="true" />
+        <!-- shouldSendStackTrace 가 false 일 경우 nexacroN으로 전송되는 에러메시지  -->
+        <!-- <property name="defaultErrorMsg" value="An Error Occured. check the ErrorCode for detail of error infomation" /> -->
+        <property name="defaultErrorMsg" value="fail.common.msg" />
+        <property name="messageSource" ref="messageSource" />   
+    </bean>
+    
+    <!-- /////////////////////////////////// 넥사크로N UIADAPTER 설정 끝 /////////////////////////////////// -->
+
+</beans>

@@ -1,0 +1,183 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FDL version="2.1">
+  <Form id="Form_Work" width="1280" height="720" titletext="Form_Work">
+    <Layouts>
+      <Layout width="1280" height="720" screenid="Desktop_screen">
+        <Combo id="Combo00" taborder="0" text="id" left="14" top="50" width="100" height="20" innerdataset="innerdataset" codecolumn="codecolumn" datacolumn="datacolumn" value="ID" index="0">
+          <Dataset id="innerdataset">
+            <ColumnInfo>
+              <Column id="codecolumn" size="256"/>
+              <Column id="datacolumn" size="256"/>
+            </ColumnInfo>
+            <Rows>
+              <Row>
+                <Col id="codecolumn">ID</Col>
+                <Col id="datacolumn">id</Col>
+              </Row>
+              <Row>
+                <Col id="codecolumn">NAME</Col>
+                <Col id="datacolumn">name</Col>
+              </Row>
+            </Rows>
+          </Dataset>
+        </Combo>
+        <Edit id="Edit00" taborder="1" left="120" top="50" width="150" height="20"/>
+        <Grid id="Grid00" taborder="2" left="14" top="74" width="626" height="300" autofittype="col" binddataset="ds_list" autoenter="select">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="80"/>
+                <Column size="80"/>
+                <Column size="80"/>
+                <Column size="80"/>
+                <Column size="80"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="id"/>
+                <Cell col="1" text="name"/>
+                <Cell col="2" text="description"/>
+                <Cell col="3" text="useYn"/>
+                <Cell col="4" text="regUser"/>
+              </Band>
+              <Band id="body">
+                <Cell text="bind:id"/>
+                <Cell col="1" text="bind:name" displaytype="editcontrol" edittype="normal"/>
+                <Cell col="2" text="bind:description" displaytype="editcontrol" edittype="normal"/>
+                <Cell col="3" text="bind:useYn" displaytype="editcontrol" edittype="normal"/>
+                <Cell col="4" text="bind:regUser" displaytype="editcontrol" edittype="normal"/>
+              </Band>
+            </Format>
+          </Formats>
+        </Grid>
+        <Button id="Button00" taborder="3" text="조회" left="302" top="20" width="80" height="50" onclick="Button00_onclick"/>
+        <Button id="Button01" taborder="4" text="추가" left="388" top="20" width="80" height="50" onclick="Button01_onclick"/>
+        <Button id="Button02" taborder="5" text="삭제" left="474" top="20" width="80" height="50" onclick="Button02_onclick"/>
+        <Button id="Button03" taborder="6" text="저장" left="560" top="20" width="80" height="50" onclick="Button03_onclick"/>
+      </Layout>
+    </Layouts>
+    <Objects>
+      <Dataset id="ds_search">
+        <ColumnInfo>
+          <Column id="searchType" type="STRING" size="256"/>
+          <Column id="keyword" type="STRING" size="256"/>
+        </ColumnInfo>
+        <Rows>
+          <Row/>
+        </Rows>
+      </Dataset>
+      <Dataset id="ds_list">
+        <ColumnInfo>
+          <Column id="id" type="STRING" size="256"/>
+          <Column id="name" type="STRING" size="256"/>
+          <Column id="description" type="STRING" size="256"/>
+          <Column id="useYn" type="STRING" size="256"/>
+          <Column id="regUser" type="STRING" size="256"/>
+        </ColumnInfo>
+      </Dataset>
+    </Objects>
+    <Script type="xscript5.1"><![CDATA[//조회버튼 클릭시
+this.Button00_onclick = function(obj:nexacro.Button,e:nexacro.ClickEventInfo)
+{
+	this.fnSearch();
+};
+
+//처리콜백 함수
+this.fnCallback = function(svcID,errorCode,errorMsg)
+{
+  // 에러 시 화면 처리 내역
+  if(errorCode != 0)
+  {
+    this.alert(errorCode+"\n"+errorMsg);
+    return;
+  }
+
+  switch(svcID)
+  {
+    case "search":
+      if(this.ds_list.rowcount < 1){
+        this.alert("조회된 결과가 없습니다.");
+      }
+
+      break;
+      
+    case "save":
+      this.alert("저장 되었습니다.");
+
+      this.fnSearch();
+
+      break;
+  }
+};
+
+//데이터 조회 트랜잭션
+this.fnSearch = function ()
+{
+  // 조회조건 셋팅
+  this.ds_search.setColumn(0, "searchType", this.Combo00.value);
+  this.ds_search.setColumn(0, "keyword"  , this.Edit00.text);
+
+  var strSvcId    = "search";
+  var strSvcUrl   = "svc::selectSampleList.do";
+  var inData      = "input1=ds_search";
+  var outData     = "ds_list=output1";
+  var strArg      = "";
+  var callBackFnc = "fnCallback";
+  var isAsync     = true;
+
+  this.transaction(strSvcId ,   // transaction을 구분하기 위한 svc id값
+            strSvcUrl ,       // trabsaction을 요청할 주소
+            inData ,         // 입력값으로 보낼 dataset id , a=b형태로 실제이름과 입력이름을 매칭
+            outData ,         // 처리결과값으로 받을 dataset id, a=b형태로 실제이름과 입력이름을 매칭
+            strArg,         // 입력값으로 보낼 arguments, a=b
+            callBackFnc,       // transaction의 결과를 받을 Function 이름
+            isAsync);         // 비동기통신 여부 [생략가능]
+};
+
+//추가 버튼클릭
+this.Button01_onclick = function(obj:nexacro.Button,e:nexacro.ClickEventInfo)
+{
+  var nRow = this.ds_list.addRow();
+  this.ds_list.set_rowposition(nRow);
+  this.Grid00.setCellPos(1);
+  this.Grid00.showEditor(true);
+};
+
+//삭제 버튼클릭
+this.Button02_onclick = function(obj:nexacro.Button,e:nexacro.ClickEventInfo)
+{
+  var nRow = this.ds_list.rowposition;
+  this.ds_list.deleteRow(nRow);
+};
+
+//저장 버튼클릭
+this.Button03_onclick = function(obj:nexacro.Button,e:nexacro.ClickEventInfo)
+{
+  this.fnSave();
+};
+
+//데이터 저장 트랜잭션
+this.fnSave = function()
+{
+  var strSvcId    = "save";
+  var strSvcUrl   = "svc::updateSampleList.do";
+  var inData      = "input1=ds_list:U";
+  var outData     = "";
+  var strArg      = "";
+  var callBackFnc = "fnCallback";
+  var isAsync     = true;
+
+  this.transaction(strSvcId ,     // transaction을 구분하기 위한 svc id값
+      strSvcUrl ,   // trabsaction을 요청할 주소
+      inData ,     // 입력값으로 보낼 dataset id , a=b형태로 실제이름과 입력이름을 매칭
+      outData ,     // 처리결과값으로 받을 dataset id, a=b형태로 실제이름과 입력이름을 매칭
+      strArg,     // 입력값으로 보낼 arguments, a=b
+      callBackFnc,   // transaction의 결과를 받을 Function 이름
+      isAsync);     // 비동기통신 여부 [생략가능]
+};
+]]></Script>
+  </Form>
+</FDL>
